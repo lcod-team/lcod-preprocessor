@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-test('index page has expected h1', async ({ page }) => {
+// eslint-disable-next-line no-empty-pattern
+test.beforeEach(async ({}, testInfo) => {
+	testInfo.snapshotPath = (name) => `${testInfo.file}-snapshots/${name}`;
+});
+
+test('compare screenshot', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByRole('heading', { name: 'Welcome to the lcod test page' })).toBeVisible();
+	await expect(page).toHaveScreenshot();
 });
