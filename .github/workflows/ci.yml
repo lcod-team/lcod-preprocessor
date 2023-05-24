@@ -23,7 +23,7 @@ jobs:
       - name: Vitest tests
         run: npm run test:unit -- --run
       - name: Install Playwright
-        run: npx playwright install
+        run: npx playwright install chromium
       - name: Playwright tests
         run: npm run test
       - name: Upload artifacts

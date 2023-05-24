@@ -1,5 +1,11 @@
-# lcod-preprocessor
+<div style="text-align: center">
+<img alt="lcod animated" title="low code object descriptor" src="https://github.com/lcod-team/lcod-assets/raw/main/logo/lcod_color_border_anim.svg" style="height:200px"/>
 
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lcod-team/lcod-preprocessor/ci.yml?label=tests&logo=githubactions&logoColor=success&branch=main)](https://github.com/lcod-team/lcod-preprocessor/actions/workflows/ci.yml)
+[![GitHub](https://img.shields.io/github/license/lcod-team/lcod-preprocessor?logo=apache&logoColor=%239AC712)](LICENSE)
+</div>
+
+# lcod-preprocessor
 This project defines a [Svelte][1] [preprocessor](https://github.com/sveltejs/svelte-preprocess/) for `.lcod` folders containing a `client.yaml` descriptor.
 
 ```mermaid
