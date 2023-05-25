@@ -27,7 +27,7 @@ import { configureLcodPreprocessor } from './src/lib/lcod-preprocessor.mjs';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	preprocess: configureLcodPreprocessor({ writeSvelte: true, uuid: true }),
+	preprocess: configureLcodPreprocessor({ writeSvelte: true, lcpath: true }),
 	kit: {
 		adapter: adapter()
 	}
