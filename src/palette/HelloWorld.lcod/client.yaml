@@ -1,5 +1,32 @@
 content:
-  - component: InternalComposant
-  - component: InternalComposant
-  - component: InternalComposant
-  - component: InternalComposant
+  - component: InternalComponent
+    properties:
+      name: Hello World !!
+  - component: InternalComponent
+    properties:
+      name: With Slots
+    slots:
+      default:
+        - component: InternalComponent
+          properties:
+            name: First in Slot
+            --color: lightgreen
+        - component: InternalComponent
+          properties:
+            name: Second in Slot
+            --color: orange
+  - component: InternalComponent
+    properties:
+      name: With header and footers
+      --color: yellow
+    slots:
+      header:
+        - component: InternalComponent
+          properties:
+            name: In header
+            --color: lightblue
+      footer:
+        - component: InternalComponent
+          properties:
+            name: In footer
+        - component: InternalComponent

@@ -12,7 +12,7 @@
 			"cwd": "${workspaceFolder}"
 		},
 		{
-			"command": "npm run test:unit -- --run",
+			"command": "npm run test:unit -- --run --test-timeout=3600000",
 			"name": "Debug Vitest",
 			"request": "launch",
 			"type": "node-terminal",

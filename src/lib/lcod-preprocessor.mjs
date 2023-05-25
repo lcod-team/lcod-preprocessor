@@ -2,17 +2,30 @@ import preprocess from 'svelte-preprocess';
 import * as fs from 'fs/promises';
 import * as path from 'path/posix';
 import YAML from 'yaml';
-import crypto from 'crypto';
 
 /**
  * @typedef PreprocessorOptions
  * @type {object}
  * @property {boolean} writeSvelte - write transpiled files to '.lcod/transpiled'
- * @property {boolean} uuid - generate UUID for components
+ * @property {boolean} lcpath - generate lcpath for components
  */
 
 const sp = '  ';
-let uuidCpt = 0;
+
+/**
+ *
+ * @param {string} str
+ * @returns {string}
+ */
+function simpleHash(str) {
+	let hash = 0;
+	for (let i = 0; i < str.length; i++) {
+		const char = str.charCodeAt(i);
+		hash = (hash << 5) - hash + char;
+		hash &= hash; // Convert to 32bit integer
+	}
+	return new Uint32Array([hash])[0].toString(36);
+}
 
 /**
  *
@@ -26,8 +39,14 @@ async function preprocesslcod(content, filename, options) {
 	const imports = new Map();
 	let body = '';
 
-	const walk = async (/** @type {string} */ p, /** @type {any} */ arr) => {
-		for (const o of arr) {
+	const walk = async (
+		/** @type {string} */ ind,
+		/** @type {any} */ arr,
+		/** @type {string|false} */ ppath
+	) => {
+		for (const i in arr) {
+			const o = arr[i];
+			let cpath = ppath;
 			/*let slots = (await getSlots(o.component));
 			slots = slots.length ? ` slots="${JSON.stringify(slots).replaceAll('"', "'")}"` : '';*/
 			let slots = '';
@@ -43,41 +62,35 @@ async function preprocesslcod(content, filename, options) {
 				}
 			}
 
-			if (options.uuid) {
-				o.uuid ??= crypto.randomUUID();
-			}
-
-			if ('uuid' in o) {
-				//body += `${p}<Identifier uuid="${o.uuid}"${slots}>\n`;
-				body += `${p}${sp}{@html '<!-- start-${o.uuid} -->'}\n`;
+			if (cpath) {
+				cpath += `/${i}`;
+				body += `${ind}${sp}{@html '<!-- start-${cpath} -->'}\n`;
 			}
 
 			if ('slots' in o) {
-				body += `${p}${sp}<${o.component}${props}>\n`;
+				body += `${ind}${sp}<${o.component}${props}>\n`;
 				for (const k in o.slots) {
+					const npath = cpath ? cpath + `/:${k}` : false;
 					if (k == 'default') {
-						await walk(`${p}${sp}${sp}`, o.slots[k]);
+						await walk(`${ind}${sp}${sp}`, o.slots[k], npath);
 					} else {
-						body += `${p}${sp}${sp}<svelte:fragment slot="${k}">\n`;
-						await walk(`${p}${sp}${sp}${sp}`, o.slots[k]);
-						body += `${p}${sp}${sp}</svelte:fragment>\n`;
+						body += `${ind}${sp}${sp}<svelte:fragment slot="${k}">\n`;
+						await walk(`${ind}${sp}${sp}${sp}`, o.slots[k], npath);
+						body += `${ind}${sp}${sp}</svelte:fragment>\n`;
 					}
 				}
-				body += `${p}${sp}</${o.component}>\n`;
+				body += `${ind}${sp}</${o.component}>\n`;
 			} else {
-				body += `${p}${sp}<${o.component}${props} />\n`;
+				body += `${ind}${sp}<${o.component}${props} />\n`;
 			}
 
-			if ('uuid' in o) {
-				//body += `${p}</Identifier>\n`;
-				body += `${p}${sp}{@html '<!-- end-${o.uuid} -->'}\n`;
+			if (cpath) {
+				body += `${ind}${sp}{@html '<!-- end-${cpath} -->'}\n`;
 			}
 		}
 	};
-	await walk('', obj.content);
-	//let txt = options.uuid ? '<script>\nimport Identifier from "$lib/Identifier.svelte";\n' : '<script>\n';
+	await walk('', obj.content, options.lcpath ? simpleHash(content) : false);
 	let txt = '<script>\n';
-	//let txt = '<script lang="ts">\nimport Identifier from "$lib/Identifier.svelte";\n';
 	for (let entry of imports) {
 		txt += `import ${entry[0]} from "${entry[1]}";\n`;
 	}
@@ -119,7 +132,7 @@ export function configureLcodPreprocessor(options) {
 	options = Object.assign(
 		{
 			writeSvelte: false,
-			uuid: false
+			lcpath: false
 		},
 		options
 	);
@@ -151,20 +164,31 @@ export function configureLcodPreprocessor(options) {
 
 if (import.meta.vitest) {
 	const { it, expect } = import.meta.vitest;
-	it('preprocesslcod', async () => {
-		const filename = './src/palette/HelloWorld.lcod';
-		const content = await fs.readFile(`${filename}/client.yaml`, 'utf8');
-		const svelte = await preprocesslcod(content, `${filename}/Comp.svelte`, {});
-		const refpath = './tests/unit/HelloWorld.svelte';
-		let ref;
+	const check = async (refpath, result) => {
 		try {
-			ref = await fs.readFile(refpath, 'utf8');
+			const ref = await fs.readFile(refpath, 'utf8');
+			expect(result).toBe(ref);
 		} catch (e) {
 			console.error(`${refpath} file is missing or cannot be read`, e);
 			await fs.mkdir(path.dirname(refpath), { recursive: true });
-			await fs.writeFile(refpath, svelte);
-			expect('missing ref file').toBe('exist ref file');
+			await fs.writeFile(refpath, result);
+			return false;
 		}
-		expect(svelte).toBe(ref);
+		return true;
+	};
+
+	it('preprocesslcod', async () => {
+		const filename = './src/palette/HelloWorld.lcod';
+		const content = await fs.readFile(`${filename}/client.yaml`, 'utf8');
+
+		let result = await preprocesslcod(content, `${filename}/Comp.svelte`, { lcpath: false });
+		let ok = await check('./tests/unit/HelloWorld.svelte', result);
+
+		result = await preprocesslcod(content, `${filename}/Comp.svelte`, { lcpath: true });
+		ok &= await check('./tests/unit/HelloWorld-lcpath.svelte', result);
+
+		if (!ok) {
+			expect('create some reference files').toBe('no missing reference files');
+		}
 	});
 }
