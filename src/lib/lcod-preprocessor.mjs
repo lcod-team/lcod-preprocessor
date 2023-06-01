@@ -1,4 +1,5 @@
 import preprocess from 'svelte-preprocess';
+import { normalizePath } from 'vite';
 import * as fs from 'fs/promises';
 import * as path from 'path/posix';
 import YAML from 'yaml';
@@ -106,7 +107,7 @@ async function preprocesslcod(content, filename, options) {
  * @return {Promise<string>}
  */
 async function solve(component, filename) {
-	//console.log('solve ' + component + ' in ' + filename);
+	filename = normalizePath(filename);
 	if (filename.endsWith('.lcod/Comp.svelte')) {
 		return await solve(component, path.normalize(`${filename}/../palette`));
 	} else if (filename.endsWith('/palette')) {
