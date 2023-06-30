@@ -1,6 +1,6 @@
 {
-	"name": "lcod-preprocessor",
-	"version": "0.0.3",
+	"name": "@lcod/preprocessor",
+	"version": "0.0.2",
 	"contributors": [
 		{
 			"name": "Albert Nicolas",
